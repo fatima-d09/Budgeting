@@ -1,0 +1,580 @@
+<title>Debt-Free Climb</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column climb — net-worth chart hero, the selected month (log + afford check), goals, milestones, 24-month grid, then the editable bills and plan settings that drive everything */
+:root{
+  --bg:#F3F6F2; --card:#FFFFFF; --fg:#14211B; --muted:#5B6B62; --line:#DCE4DE;
+  --accent:#1E7A4C; --accent-soft:#DDF0E4; --debt:#C0463B; --debt-soft:#F7E2DF; --gold:#B7800F; --gold-soft:#F8EBCB;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1512; --card:#16201B; --fg:#E5EEE8; --muted:#97A89E; --line:#2A3830;
+  --accent:#4CC48A; --accent-soft:#183627; --debt:#EE7C6F; --debt-soft:#3A1F1C; --gold:#E7B44A; --gold-soft:#3A2E12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1512; --card:#16201B; --fg:#E5EEE8; --muted:#97A89E; --line:#2A3830;
+  --accent:#4CC48A; --accent-soft:#183627; --debt:#EE7C6F; --debt-soft:#3A1F1C; --gold:#E7B44A; --gold-soft:#3A2E12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:700}
+h2{font-size:1.2rem;font-weight:700}
+h3{font-size:1rem;font-weight:700}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.sync{font-size:.8rem;color:var(--muted)}
+.head-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+/* hero */
+.nw-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.nw{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,9vw,4rem);line-height:1;font-variant-numeric:tabular-nums}
+.nw.neg{color:var(--debt)} .nw.pos{color:var(--accent)}
+.delta{font-size:.95rem;color:var(--muted)}
+.chartbox svg{display:block;width:100%;height:auto}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{padding:12px 14px;border-radius:12px;background:var(--bg);min-width:0}
+.stat b{display:block;font-family:var(--mono);font-size:1.1rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.78rem;color:var(--muted)}
+/* month */
+.month{border:2px solid var(--accent)}
+.pill{font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.money{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.money .stat b.big{color:var(--accent)}
+.money .stat b.bad{color:var(--debt)}
+.list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.list li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--bg);min-width:0}
+.list li > span:first-child{min-width:0;overflow-wrap:anywhere}
+.list li .amt{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.sub{border-top:1px solid var(--line);padding-top:14px;display:grid;gap:10px}
+.row-form{display:flex;gap:8px;flex-wrap:wrap}
+.row-form input[type=text]{flex:1 1 180px}
+.row-form input[type=number]{flex:0 1 130px}
+input{font-family:var(--body);font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;width:100%}
+input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+input:focus-visible{outline:3px solid var(--accent-soft);border-color:var(--accent)}
+.dollar{position:relative;display:block;min-width:0}
+.dollar::before{content:"$";position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--mono);pointer-events:none}
+.dollar input{padding-left:24px}
+button{font-family:var(--body);font-size:1rem;font-weight:600;border-radius:12px;padding:11px 16px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--card)}
+button.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:6px 8px;font-size:.9rem}
+button.ghost:hover{color:var(--debt)}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+/* afford */
+.afford{border:1px solid var(--line)}
+.verdict{border-radius:12px;padding:14px 16px;display:grid;gap:8px}
+.verdict.ok{background:var(--accent-soft)} .verdict.ok h3{color:var(--accent)}
+.verdict.mid{background:var(--gold-soft)} .verdict.mid h3{color:var(--gold)}
+.verdict.no{background:var(--debt-soft)} .verdict.no h3{color:var(--debt)}
+.verdict ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.verdict p{margin:0}
+/* goals */
+.goal-top{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.goal-top .num{font-weight:500;color:var(--muted);font-size:.9rem}
+.bar{height:12px;border-radius:999px;background:var(--bg);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--accent);transition:width .6s ease}
+.goal.done .goal-top::after{content:"Done";font-size:.75rem;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:999px;margin-left:auto}
+.goal.done .goal-top .num{display:none}
+/* milestones */
+.trail{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ms{padding:14px;border-radius:12px;border:1px dashed var(--line);display:grid;gap:4px;min-width:0}
+.ms .m{font-size:.75rem;color:var(--muted)}
+.ms .t{font-weight:600;line-height:1.3}
+.ms.got{border-style:solid;border-color:var(--gold);background:var(--gold-soft)}
+.ms.got .m{color:var(--gold);font-weight:600}
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px}
+.mo{aspect-ratio:1;max-width:100%;border-radius:8px;background:var(--bg);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--mono);font-size:.75rem;color:var(--muted);padding:0;position:relative}
+.mo.done{background:var(--accent);border-color:var(--accent);color:var(--card)}
+.mo.next{border:2px solid var(--accent);color:var(--fg)}
+.mo.sel{outline:3px solid var(--gold);outline-offset:1px}
+.mo.logged::after{content:"";position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+/* bills + settings */
+.bill{display:grid;grid-template-columns:minmax(0,1fr) 140px auto;gap:8px;align-items:center}
+.total{display:flex;justify-content:space-between;font-weight:600;padding:10px 12px;border-radius:10px;background:var(--bg)}
+.settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{display:grid;gap:6px;min-width:0}
+.field label{font-size:.85rem;font-weight:600}
+.field small{font-size:.75rem;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;max-width:calc(100% - 32px);text-align:center;z-index:5}
+.foot{font-size:.8rem;color:var(--muted);margin:0}
+@media (max-width:640px){
+  .stats,.money{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .trail{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .settings{grid-template-columns:minmax(0,1fr)}
+  .bill{grid-template-columns:minmax(0,1fr) 110px auto}
+}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="eyebrow">From $10,100 in debt to investing</div>
+      <h1>Debt-Free Climb</h1>
+    </div>
+    <div class="sync" id="sync">Loading your progress…</div>
+  </header>
+
+  <section class="card" aria-labelledby="nw-label">
+    <div>
+      <div class="eyebrow" id="nw-label">Your net worth</div>
+      <div class="nw-row">
+        <div class="nw num neg" id="nw">−$10,100</div>
+        <div class="delta" id="delta"></div>
+      </div>
+    </div>
+    <div class="chartbox" id="chart" role="img" aria-label="Net worth over 24 months, planned and completed"></div>
+    <div class="stats">
+      <div class="stat"><b id="s-months">0 / 24</b><span>Months done</span></div>
+      <div class="stat"><b id="s-debt">$10,100</b><span>Debt left</span></div>
+      <div class="stat"><b id="s-ef">$0</b><span>Emergency fund</span></div>
+      <div class="stat"><b id="s-inv">$0</b><span>Invested</span></div>
+    </div>
+  </section>
+
+  <section class="card month" id="month-card" aria-labelledby="m-title">
+    <div class="head-row">
+      <h2 id="m-title">Month 1</h2>
+      <span class="pill" id="m-step"></span>
+    </div>
+    <div class="money">
+      <div class="stat"><label for="m-income" style="font-size:.78rem;color:var(--muted)">Take-home this month</label><span class="dollar"><input id="m-income" type="number" inputmode="decimal" min="0" step="1"></span></div>
+      <div class="stat"><b id="m-bills">$0</b><span>Monthly bills</span></div>
+      <div class="stat"><b id="m-extra">$0</b><span>Extra spending</span></div>
+      <div class="stat"><b id="m-plan" class="big">$0</b><span>Left for the plan</span></div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:8px">Where the money goes</h3>
+      <ul class="list" id="moves"></ul>
+    </div>
+    <div class="sub">
+      <h3>Extra spending this month</h3>
+      <p class="muted" style="margin:0;font-size:.9rem">Anything outside your regular bills: a concert, new shoes, a gift. It comes out of this month's plan money.</p>
+      <ul class="list" id="extras"></ul>
+      <form class="row-form" id="extra-form">
+        <input id="ex-name" type="text" placeholder="What was it?" aria-label="Extra spending item">
+        <span class="dollar" style="flex:0 1 130px"><input id="ex-amt" type="number" inputmode="decimal" min="0" step="1" placeholder="0" aria-label="Amount"></span>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+    <div class="btns">
+      <button class="primary" id="btn-done" type="button">Mark month 1 done</button>
+      <button id="btn-undo" type="button">Undo month</button>
+    </div>
+  </section>
+
+  <section class="card afford" aria-labelledby="af-title">
+    <div class="head-row">
+      <h2 id="af-title">Can I afford it?</h2>
+      <span class="muted" id="af-month" style="font-size:.9rem">Checking month 1</span>
+    </div>
+    <form class="row-form" id="af-form">
+      <input id="af-name" type="text" placeholder="e.g. Sneakers" aria-label="What do you want to buy?">
+      <span class="dollar" style="flex:0 1 130px"><input id="af-amt" type="number" inputmode="decimal" min="0" step="1" placeholder="0" aria-label="Price"></span>
+    </form>
+    <div id="af-result"><p class="muted" style="margin:0">Type a price and you'll see right away whether it moves any of your goals.</p></div>
+  </section>
+
+  <section class="card" aria-labelledby="goals-title">
+    <h2 id="goals-title">Goals</h2>
+    <div id="goal-list" style="display:grid;gap:16px"></div>
+  </section>
+
+  <section class="card" aria-labelledby="ms-title">
+    <h2 id="ms-title">Milestones</h2>
+    <div class="trail" id="trail"></div>
+  </section>
+
+  <section class="card" aria-labelledby="grid-title">
+    <div class="head-row"><h2 id="grid-title">24 months</h2><span class="muted" style="font-size:.85rem">Tap a month to see or log it</span></div>
+    <div class="grid" id="grid"></div>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>Done</span>
+      <span><i style="border:2px solid var(--accent)"></i>Up next</span>
+      <span><i style="background:var(--gold);border-radius:50%;width:8px;height:8px"></i>Has logged changes</span>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="bills-title">
+    <h2 id="bills-title">Monthly bills</h2>
+    <p class="muted" style="margin:0;font-size:.9rem">Everything you pay every month. Change an amount and the whole plan updates.</p>
+    <div id="bills" style="display:grid;gap:8px"></div>
+    <form class="row-form" id="bill-form">
+      <input id="bill-name" type="text" placeholder="New bill, e.g. Gym" aria-label="New bill name">
+      <span class="dollar" style="flex:0 1 130px"><input id="bill-amt" type="number" inputmode="decimal" min="0" step="1" placeholder="0" aria-label="New bill amount"></span>
+      <button type="submit">Add bill</button>
+    </form>
+    <div class="total"><span>Total per month</span><span class="num" id="bill-total">$0</span></div>
+  </section>
+
+  <section class="card" aria-labelledby="set-title">
+    <h2 id="set-title">Plan settings</h2>
+    <div class="settings" id="settings"></div>
+    <button id="btn-reset" type="button" style="justify-self:start">Reset to original plan</button>
+    <div id="reset-confirm" hidden class="verdict no">
+      <p>This erases your bills, settings, logs and checked-off months. Are you sure?</p>
+      <div class="btns"><button type="button" id="reset-yes" class="primary" style="background:var(--debt);border-color:var(--debt)">Yes, reset everything</button><button type="button" id="reset-no">Cancel</button></div>
+    </div>
+  </section>
+
+  <p class="foot">Order of the plan each month: credit card first, then the emergency fund, then 401k, Roth IRA and student loans, and whatever is left goes to your brokerage. If a month's spending is more than its take-home, the difference comes out of the emergency fund. Balances ignore interest and market growth, so real numbers will differ a little.</p>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const MONTHS = 24;
+const DEFAULTS = {
+  completed: 0,
+  settings: { paycheck:2285, perMonth:2.17, cc:2100, loan:8000, efGoal:7000, k401:490, roth:625, loanPay:1000 },
+  bills: [
+    {id:"b1", name:"Rent", amt:1530},
+    {id:"b2", name:"Food", amt:300},
+    {id:"b3", name:"Transit (MetroCard)", amt:132},
+    {id:"b4", name:"Utilities + internet", amt:90},
+    {id:"b5", name:"Phone", amt:33},
+    {id:"b6", name:"Subscriptions", amt:30},
+    {id:"b7", name:"Personal / fun money", amt:170}
+  ],
+  logs: {}
+};
+const SETTINGS = [
+  ["paycheck","Take-home per paycheck","After taxes, from your pay stub"],
+  ["perMonth","Paychecks per month (average)","Every 2 weeks averages 2.17. Month 1 counts as 2.",{dollar:false,step:"0.01"}],
+  ["cc","Credit card balance","When you started"],
+  ["loan","Student loan balance","When you started"],
+  ["efGoal","Emergency fund goal","3 to 6 months of bills"],
+  ["k401","401k per month","Taken out once the emergency fund is full"],
+  ["roth","Roth IRA per month","$625 a month reaches the $7,500 yearly limit"],
+  ["loanPay","Student loan payment per month","Extra payments once the emergency fund is full"]
+];
+const STEPS = {
+  1:{name:"Step 1 · Pay off credit card", bg:"var(--debt-soft)", fg:"var(--debt)"},
+  2:{name:"Step 2 · Emergency fund", bg:"var(--gold-soft)", fg:"var(--gold)"},
+  3:{name:"Step 3 · Loans + investing", bg:"var(--accent-soft)", fg:"var(--accent)"},
+  4:{name:"Step 4 · Invest", bg:"var(--accent-soft)", fg:"var(--accent)"}
+};
+const BUCKETS = [["ccPay","credit card payment"],["efAdd","emergency fund"],["kAdd","401k"],["rAdd","Roth IRA"],["lPay","student loan payment"],["bAdd","brokerage"]];
+
+let S = clone(DEFAULTS);
+let sel = null;
+const fmt = n => (n<0?"−":"")+"$"+Math.abs(Math.round(n)).toLocaleString("en-US");
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num = v => { const n=parseFloat(v); return isFinite(n)?n:0; };
+const uid = () => Math.random().toString(36).slice(2,9);
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+const $ = id => document.getElementById(id);
+
+function billsTotal(){ return S.bills.reduce((a,b)=>a+num(b.amt),0); }
+function log(m){ return S.logs["m"+m] || {}; }
+function defaultIncome(m){ const s=S.settings; return m===1 ? s.paycheck*2 : s.paycheck*s.perMonth; }
+function incomeFor(m){ const l=log(m); return (l.income!==undefined && l.income!==null && l.income!=="") ? num(l.income) : defaultIncome(m); }
+function extrasFor(m){ return (log(m).extras||[]).reduce((a,e)=>a+num(e.amt),0); }
+
+function buildPlan(extra){
+  const s=S.settings, rows=[], bills=billsTotal();
+  let cc=num(s.cc), ef=0, loan=num(s.loan), k=0, roth=0, brk=0;
+  for(let m=1;m<=MONTHS;m++){
+    const step = cc>0?1:(ef<num(s.efGoal)?2:(loan>0?3:4));
+    const inc=incomeFor(m), ex=extrasFor(m)+(extra&&extra.m===m?extra.amt:0);
+    let money=inc-bills-ex, deficit=0;
+    if(money<0){ deficit=Math.min(-money,ef); ef-=deficit; money=0; }
+    const forPlan=money;
+    const ccPay=Math.min(money,cc); money-=ccPay; cc-=ccPay;
+    const efAdd=Math.min(money,Math.max(0,num(s.efGoal)-ef)); money-=efAdd; ef+=efAdd;
+    let kAdd=0,rAdd=0,lPay=0,bAdd=0;
+    if(cc===0 && ef>=num(s.efGoal)){
+      kAdd=Math.min(money,num(s.k401)); money-=kAdd;
+      rAdd=Math.min(money,num(s.roth)); money-=rAdd;
+      lPay=Math.min(money,num(s.loanPay),loan); money-=lPay; loan-=lPay;
+      bAdd=money;
+    } else { ef+=money; }
+    k+=kAdd; roth+=rAdd; brk+=bAdd;
+    rows.push({m,step,inc,bills,ex,forPlan,deficit,ccPay,efAdd,kAdd,rAdd,lPay,bAdd,cc,ef,loan,k,roth,brk,inv:k+roth+brk,debt:cc+loan,nw:ef+k+roth+brk-cc-loan});
+  }
+  return rows;
+}
+function startState(){ const s=S.settings; const d=num(s.cc)+num(s.loan); return {cc:num(s.cc),ef:0,loan:num(s.loan),inv:0,roth:0,debt:d,nw:-d}; }
+function milestones(plan){
+  const g=num(S.settings.efGoal);
+  const first=t=>{ const r=plan.find(t); return r?r.m:null; };
+  return [
+    {t:"Credit card gone", m:first(r=>r.cc<=0)},
+    {t:"$2,000 starter fund", m:first(r=>r.ef>=Math.min(2000,g))},
+    {t:"Emergency fund full", m:first(r=>r.ef>=g)},
+    {t:"Net worth above $0", m:first(r=>r.nw>0)},
+    {t:"First $10,000 invested", m:first(r=>r.inv>=10000)},
+    {t:"Completely debt-free", m:first(r=>r.debt<=0)},
+    {t:"Roth IRA hits $7,500", m:first(r=>r.roth>=7500)},
+    {t:"$25,000 invested", m:first(r=>r.inv>=25000)}
+  ];
+}
+
+function curMonth(){ return sel || Math.min(S.completed+1, MONTHS); }
+
+/* ---------- drawing ---------- */
+function drawChart(plan){
+  const W=800,H=260,pl=64,pr=16,pt=18,pb=34, start=startState(), done=S.completed;
+  const vals=[start.nw,...plan.map(r=>r.nw)];
+  let lo=Math.floor(Math.min(...vals,0)/10000)*10000, hi=Math.ceil(Math.max(...vals,0)/10000)*10000;
+  if(hi===lo) hi=lo+10000;
+  const stepV=(hi-lo)>60000?20000:10000;
+  const x=i=>pl+(W-pl-pr)*i/MONTHS, y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo));
+  let g="";
+  for(let v=lo; v<=hi; v+=stepV){
+    const z=v===0;
+    g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--${z?'muted':'line'})" stroke-width="${z?1.2:1}" ${z?'stroke-dasharray="4 4"':''}/>`;
+    g+=`<text x="${pl-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--mono)">${v===0?'$0':(v<0?'−':'')+'$'+Math.abs(v/1000)+'k'}</text>`;
+  }
+  [0,6,12,18,24].forEach(i=>{ g+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">${i===0?'Start':'Month '+i}</text>`; });
+  const pts=vals.map((v,i)=>`${x(i)},${y(v)}`);
+  g+=`<polyline points="${pts.join(" ")}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 5" opacity=".7"/>`;
+  if(done>0){
+    const dp=pts.slice(0,done+1);
+    g+=`<polygon points="${x(0)},${y(lo)} ${dp.join(" ")} ${x(done)},${y(lo)}" fill="var(--accent)" opacity=".12"/>`;
+    g+=`<polyline points="${dp.join(" ")}" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  const cv=vals[done];
+  g+=`<circle cx="${x(done)}" cy="${y(cv)}" r="7" fill="${cv<0?'var(--debt)':'var(--accent)'}" stroke="var(--card)" stroke-width="3"/>`;
+  const lx=Math.min(Math.max(x(done),pl+50),W-pr-50), ly=y(cv)-16<pt+10?y(cv)+26:y(cv)-16;
+  g+=`<text x="${lx}" y="${ly}" text-anchor="middle" font-size="13" font-weight="600" fill="var(--fg)" font-family="var(--body)">You are here</text>`;
+  $("chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">${g}</svg>`;
+}
+
+function movesFor(r){
+  const L=[];
+  if(r.deficit>0) L.push(["Taken out of emergency fund to cover spending", "−"+fmt(r.deficit)]);
+  if(r.ccPay) L.push(["Pay off credit card", fmt(r.ccPay)]);
+  if(r.efAdd) L.push(["Move to emergency fund (high-yield savings)", fmt(r.efAdd)]);
+  if(r.kAdd) L.push(["401k", fmt(r.kAdd)]);
+  if(r.rAdd) L.push(["Roth IRA", fmt(r.rAdd)]);
+  if(r.lPay) L.push(["Student loan payment", fmt(r.lPay)]);
+  if(r.bAdd) L.push(["Brokerage account", fmt(r.bAdd)]);
+  if(!L.length) L.push(["Nothing left for the plan this month", "$0"]);
+  return L;
+}
+
+function renderOutputs(){
+  const plan=buildPlan(), start=startState(), done=S.completed;
+  const st=done===0?start:plan[done-1];
+  $("eyebrow").textContent=`From ${fmt(start.debt)} in debt to investing`;
+  const nw=$("nw"); nw.textContent=fmt(st.nw); nw.className="nw num "+(st.nw<0?"neg":"pos");
+  $("delta").textContent = done===0 ? `Starting point: ${fmt(start.cc)} credit card + ${fmt(start.loan)} student loans`
+    : `Up ${fmt(st.nw-start.nw)} since you started`+(st.nw>=0?" · out of the red":"");
+  $("s-months").textContent=`${done} / ${MONTHS}`;
+  $("s-debt").textContent=fmt(st.debt); $("s-ef").textContent=fmt(st.ef); $("s-inv").textContent=fmt(st.inv);
+  drawChart(plan);
+
+  const m=curMonth(), r=plan[m-1], stp=STEPS[r.step];
+  $("m-title").textContent = m<=done ? `Month ${m} · done` : (m===done+1 ? `Month ${m} · up next` : `Month ${m} · ahead`);
+  const pill=$("m-step"); pill.textContent=stp.name; pill.style.background=stp.bg; pill.style.color=stp.fg;
+  $("m-bills").textContent=fmt(r.bills); $("m-extra").textContent=fmt(r.ex);
+  const left=r.inc-r.bills-r.ex; const mp=$("m-plan"); mp.textContent=fmt(left); mp.className=left<0?"bad":"big";
+  $("moves").innerHTML=movesFor(r).map(([a,b])=>`<li><span>${esc(a)}</span><span class="amt">${b}</span></li>`).join("");
+  const bd=$("btn-done"), bu=$("btn-undo");
+  bd.hidden = m!==done+1 || done>=MONTHS; bd.textContent=`I did it, mark month ${m} done`;
+  bu.hidden = m!==done || done===0; bu.textContent=`Undo month ${m}`;
+  $("af-month").textContent=`Checking month ${m}`;
+
+  const s=S.settings;
+  const goals=[
+    {t:"Credit card paid off", have:num(s.cc)-st.cc, need:num(s.cc), label:`${fmt(st.cc)} left`},
+    {t:"Emergency fund", have:st.ef, need:num(s.efGoal), label:`${fmt(st.ef)} of ${fmt(s.efGoal)}`},
+    {t:"Student loans paid off", have:num(s.loan)-st.loan, need:num(s.loan), label:`${fmt(st.loan)} left`},
+    {t:"Roth IRA: first $7,500", have:Math.min(st.roth,7500), need:7500, label:`${fmt(st.roth)} of $7,500`}
+  ];
+  $("goal-list").innerHTML=goals.map(g=>{
+    const p=g.need>0?Math.max(0,Math.min(100,Math.round(100*g.have/g.need))):100, ok=p>=100;
+    return `<div class="goal${ok?' done':''}"><div class="goal-top"><span>${g.t}</span><span class="num">${g.label}</span></div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}" aria-label="${g.t}"><i style="width:${p}%"></i></div></div>`;
+  }).join("");
+
+  $("trail").innerHTML=milestones(plan).map(ms=>{
+    const got=ms.m && done>=ms.m;
+    const when=ms.m?(got?'Unlocked · month '+ms.m:'Planned · month '+ms.m):'After month 24';
+    return `<div class="ms${got?' got':''}"><span class="m">${when}</span><span class="t">${ms.t}</span></div>`;
+  }).join("");
+
+  $("grid").innerHTML=plan.map(row=>{
+    const l=log(row.m), logged=(l.extras&&l.extras.length)||(l.income!==undefined&&l.income!==null&&l.income!=="");
+    const cls=["mo"]; if(row.m<=done)cls.push("done"); if(row.m===done+1)cls.push("next"); if(row.m===m)cls.push("sel"); if(logged)cls.push("logged");
+    return `<button type="button" class="${cls.join(" ")}" data-m="${row.m}" aria-label="Month ${row.m}${row.m<=done?', done':''}">${row.m}</button>`;
+  }).join("");
+  $("bill-total").textContent=fmt(billsTotal());
+  renderAfford(plan);
+}
+
+function renderAfford(plan){
+  const amt=num($("af-amt").value), name=$("af-name").value.trim()||"This";
+  const box=$("af-result");
+  if(amt<=0){ box.innerHTML=`<p class="muted" style="margin:0">Type a price and you'll see right away whether it moves any of your goals.</p>`; return; }
+  const m=curMonth(), plan2=buildPlan({m,amt}), r1=plan[m-1], r2=plan2[m-1];
+  const ms1=milestones(plan), ms2=milestones(plan2);
+  const shifts=ms1.map((a,i)=>({t:a.t,a:a.m,b:ms2[i].m})).filter(x=>x.a!==x.b);
+  const losses=BUCKETS.map(([k,l])=>({l,d:r1[k]-r2[k]})).filter(x=>x.d>0.5);
+  const dipped=r2.deficit-r1.deficit;
+  const fun=S.bills.find(b=>/fun|personal|spend/i.test(b.name));
+  let cls,head,lines=[];
+  if(dipped>0.5){ cls="no"; head=`Not this month`; lines.push(`You'd have to pull ${fmt(dipped)} out of your emergency fund to cover it.`); }
+  else if(losses.some(x=>x.l==="credit card payment")){ cls="no"; head=`Wait until the card is paid off`; lines.push(`It would slow down your credit card payoff, and that card is charging you interest.`); }
+  else if(!shifts.length){ cls="ok"; head=`Go for it`; lines.push(`No goal moves. Every milestone stays on the same month.`); }
+  else if(shifts.some(x=>(x.b||99)-(x.a||99)>1)){ cls="no"; head=`Think twice`; }
+  else { cls="mid"; head=`Your call`; }
+  if(losses.length) lines.push(`It comes out of this month's ${losses.map(x=>`${x.l} (${fmt(x.d)})`).join(", ")}.`);
+  const sh=shifts.map(x=>`<li>${esc(x.t)}: month ${x.a??"24+"} → ${x.b?("month "+x.b):"after month 24"}</li>`).join("");
+  let funNote="";
+  if(fun && amt<=num(fun.amt)) funNote=`<p class="muted" style="font-size:.9rem">Fits inside your ${esc(fun.name)} (${fmt(fun.amt)}). Pay for it from that and you don't need to log it as extra.</p>`;
+  box.innerHTML=`<div class="verdict ${cls}"><h3>${head}: ${esc(name)} for ${fmt(amt)}</h3>${lines.map(l=>`<p>${esc(l)}</p>`).join("")}${sh?`<p>It would push back:</p><ul>${sh}</ul>`:""}${funNote}<div class="btns"><button type="button" class="primary" id="af-add">Buy it: add to month ${m}</button></div></div>`;
+  $("af-add").onclick=()=>{
+    addExtra(m,$("af-name").value.trim()||"Purchase",amt);
+    $("af-name").value=""; $("af-amt").value=""; toast(`Added to month ${m}`);
+  };
+}
+
+/* ---------- inputs (rebuilt only on structure changes, so typing keeps focus) ---------- */
+function renderBills(){
+  $("bills").innerHTML=S.bills.map(b=>`<div class="bill" data-id="${b.id}">
+    <input type="text" id="bn-${b.id}" value="${esc(b.name)}" aria-label="Bill name">
+    <span class="dollar"><input type="number" id="ba-${b.id}" inputmode="decimal" min="0" step="1" value="${num(b.amt)}" aria-label="${esc(b.name)} amount"></span>
+    <button type="button" class="ghost" data-del="${b.id}" aria-label="Remove ${esc(b.name)}">Remove</button></div>`).join("");
+}
+function renderSettings(){
+  $("settings").innerHTML=SETTINGS.map(([k,label,help,opt])=>{
+    const dollar=!(opt&&opt.dollar===false), step=(opt&&opt.step)||"1";
+    const inp=`<input type="number" id="set-${k}" data-k="${k}" inputmode="decimal" min="0" step="${step}" value="${S.settings[k]}">`;
+    return `<div class="field"><label for="set-${k}">${label}</label>${dollar?`<span class="dollar">${inp}</span>`:inp}<small>${help}</small></div>`;
+  }).join("");
+}
+function renderMonthInputs(){
+  const m=curMonth(), l=log(m);
+  const inc=$("m-income"); inc.value = (l.income!==undefined&&l.income!==null&&l.income!=="") ? l.income : "";
+  inc.placeholder=Math.round(defaultIncome(m));
+  const ex=l.extras||[];
+  $("extras").innerHTML = ex.length ? ex.map(e=>`<li><span>${esc(e.name)}</span><span style="display:flex;align-items:center;gap:6px"><span class="amt">${fmt(e.amt)}</span><button type="button" class="ghost" data-exdel="${e.id}" aria-label="Remove ${esc(e.name)}">Remove</button></span></li>`).join("")
+    : `<li><span class="muted">Nothing extra logged for month ${m}</span><span></span></li>`;
+}
+function renderAll(){ renderBills(); renderSettings(); renderMonthInputs(); renderOutputs(); }
+
+function setLog(m,patch){ const k="m"+m; S.logs[k]=Object.assign({},S.logs[k]||{},patch); }
+function addExtra(m,name,amt){ const l=log(m); setLog(m,{extras:[...(l.extras||[]),{id:uid(),name,amt}]}); renderMonthInputs(); renderOutputs(); save(); }
+
+/* events */
+$("bills").addEventListener("input",e=>{
+  const row=e.target.closest(".bill"); if(!row) return;
+  const b=S.bills.find(x=>x.id===row.dataset.id); if(!b) return;
+  if(e.target.type==="number") b.amt=num(e.target.value); else b.name=e.target.value;
+  renderOutputs(); save();
+});
+$("bills").addEventListener("click",e=>{
+  const id=e.target.dataset&&e.target.dataset.del; if(!id) return;
+  S.bills=S.bills.filter(b=>b.id!==id); renderBills(); renderOutputs(); save();
+});
+$("bill-form").addEventListener("submit",e=>{
+  e.preventDefault(); const n=$("bill-name").value.trim(), a=num($("bill-amt").value);
+  if(!n){ $("bill-name").focus(); return; }
+  S.bills.push({id:uid(),name:n,amt:a}); $("bill-name").value=""; $("bill-amt").value="";
+  renderBills(); renderOutputs(); save();
+});
+$("settings").addEventListener("input",e=>{
+  const k=e.target.dataset.k; if(!k) return; S.settings[k]=num(e.target.value);
+  renderMonthInputs(); renderOutputs(); save();
+});
+$("m-income").addEventListener("input",e=>{
+  setLog(curMonth(),{income:e.target.value===""?null:num(e.target.value)}); renderOutputs(); save();
+});
+$("extra-form").addEventListener("submit",e=>{
+  e.preventDefault(); const n=$("ex-name").value.trim(), a=num($("ex-amt").value);
+  if(a<=0){ $("ex-amt").focus(); return; }
+  addExtra(curMonth(), n||"Extra", a); $("ex-name").value=""; $("ex-amt").value="";
+});
+$("extras").addEventListener("click",e=>{
+  const id=e.target.dataset&&e.target.dataset.exdel; if(!id) return;
+  const m=curMonth(); setLog(m,{extras:(log(m).extras||[]).filter(x=>x.id!==id)}); renderMonthInputs(); renderOutputs(); save();
+});
+$("af-form").addEventListener("submit",e=>e.preventDefault());
+$("af-amt").addEventListener("input",()=>renderAfford(buildPlan()));
+$("af-name").addEventListener("input",()=>renderAfford(buildPlan()));
+$("grid").addEventListener("click",e=>{
+  const b=e.target.closest("[data-m]"); if(!b) return;
+  const m=+b.dataset.m; sel = (m===S.completed+1)?null:m;
+  renderMonthInputs(); renderOutputs();
+  $("month-card").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth", block:"start"});
+});
+$("btn-done").addEventListener("click",()=>{
+  if(S.completed>=MONTHS) return;
+  S.completed++; sel=null; renderMonthInputs(); renderOutputs(); save();
+  const plan=buildPlan(), hit=milestones(plan).find(ms=>ms.m===S.completed);
+  toast(hit?`Milestone unlocked: ${hit.t}!`:`Month ${S.completed} done. Net worth ${fmt(plan[S.completed-1].nw)}.`);
+});
+$("btn-undo").addEventListener("click",()=>{
+  if(S.completed===0) return; S.completed--; sel=null; renderMonthInputs(); renderOutputs(); save(); toast(`Month ${S.completed+1} unmarked`);
+});
+$("btn-reset").addEventListener("click",()=>{ $("reset-confirm").hidden=false; });
+$("reset-no").addEventListener("click",()=>{ $("reset-confirm").hidden=true; });
+$("reset-yes").addEventListener("click",()=>{ S=clone(DEFAULTS); sel=null; $("reset-confirm").hidden=true; renderAll(); save(); toast("Back to the original plan"); });
+
+let toastTimer;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.hidden=true,3200); }
+
+/* ---------- saving: shared store when available, this browser as backup ---------- */
+let ref=null, saveTimer=null, writing=false, again=false;
+function setSync(msg){ $("sync").textContent=msg; }
+function localGet(){ try{ const v=localStorage.getItem("climb-state"); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function localSet(){ try{ localStorage.setItem("climb-state",JSON.stringify(S)); }catch(e){} }
+function normalize(d){
+  const o=clone(DEFAULTS);
+  if(d && typeof d==="object"){
+    if(isFinite(+d.completed)) o.completed=Math.max(0,Math.min(MONTHS,+d.completed));
+    if(d.settings) for(const k in o.settings) if(isFinite(+d.settings[k])) o.settings[k]=+d.settings[k];
+    if(Array.isArray(d.bills)) o.bills=d.bills.filter(b=>b&&b.id).map(b=>({id:String(b.id),name:String(b.name||""),amt:num(b.amt)}));
+    if(d.logs && typeof d.logs==="object") o.logs=d.logs;
+  }
+  return o;
+}
+function save(){
+  localSet();
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(flush,700);
+  setSync(ref?"Saving…":"Saved in this browser");
+}
+async function flush(){
+  if(!ref){ setSync("Saved in this browser"); return; }
+  if(writing){ again=true; return; }
+  writing=true;
+  try{ await ref.set({completed:S.completed, settings:S.settings, bills:S.bills, logs:S.logs, updatedAt:new Date().toISOString()}); setSync("All changes saved"); }
+  catch(e){ setSync("Couldn't save online. Changes are kept in this browser"); }
+  writing=false;
+  if(again){ again=false; flush(); }
+}
+
+const local=localGet(); if(local) S=normalize(local);
+renderAll();
+
+(async()=>{
+  let db=null;
+  try{ db = window.claude ? await window.claude.use("db") : null; }catch(e){ db=null; }
+  if(!db){ setSync("Saved in this browser"); return; }
+  ref=db.doc("progress/main");
+  const timer=setTimeout(()=>setSync("Still connecting… changes are kept in this browser"),10000);
+  try{
+    const snap=await ref.get(); clearTimeout(timer);
+    if(snap.exists){
+      const d=snap.data()||{};
+      if(d.settings||d.bills){ S=normalize(d); localSet(); renderAll(); }
+      else if(isFinite(+d.completed)){ S.completed=Math.max(0,Math.min(MONTHS,+d.completed)); renderAll(); flush(); }
+      setSync("All changes saved");
+    } else { setSync("Ready. Changes save automatically"); if(local) flush(); }
+  }catch(e){ clearTimeout(timer); setSync("Saved in this browser"); ref=null; }
+})();
+</script>
